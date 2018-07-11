@@ -45,7 +45,8 @@ module.exports = class extends Generator {
 		context[OPTION_BLUEMIX] = Object.assign(context[OPTION_BLUEMIX] || {}, this.options[OPTION_BLUEMIX]);
 		context[OPTION_STARTER] = this.options[OPTION_STARTER];
 		context.loggerLevel = logger.level;
-		context.language = context.bluemix.backendPlatform.toLowerCase();
+		//context.language = context.bluemix.backendPlatform.toLowerCase();
+		context.language = 'go'; // for testing purposes
 		if(context.language === 'django'){
 			context.language = 'python';
 		}
@@ -70,6 +71,9 @@ module.exports = class extends Generator {
 			case "swift":
 				languageGeneratorPath = '../language-swift-kitura';
 				context.language = 'swift';
+				break;
+			case "go":
+				languageGeneratorPath = '../language-go'
 				break;
 		}
 	

@@ -1,0 +1,5 @@
+
+[[constraint]]
+  name = "github.com/deckarep/golang-set"
+  version = "1.7.0"
+
