@@ -1,9 +1,7 @@
 'use strict';
 const Log4js = require('log4js');
 const logger = Log4js.getLogger("generator-service-enablement-golang:language-go");
-
 const toml = require('toml');
-
 const path = require('path');
 const Utils = require('../lib/Utils');
 const fs = require('fs');
@@ -91,20 +89,20 @@ module.exports = class extends Generator {
 
 		console.log(newDepenedency)
 		//check if it exists
-	
+
 		content.forEach(function(dependency) {
 			console.log(dependency.name + " and " + newDepenedency.name);
 			if (dependency.name === newDepenedency.name) {
 				console.log(dependency.name)
 				return;
 			}
-			
+
 		});
 
 		// only append if the dependency does not already exist
 		this.fs.append(gopkgTomlPath, serviceDepdendenciesString);
 
-		// TODO: finish this once the IBM Cloud ENV is completed		
+		// TODO: finish this once the IBM Cloud ENV is completed
 	}
 
 	_addMappings(serviceMappingsJSON) {
@@ -117,38 +115,38 @@ module.exports = class extends Generator {
 		this.fs.extendJSON(localDevConfigFilePath, serviceLocalDevConfigJSON);
 	}
 
-	// TODO: fix this
 	_addInstrumentation(options) {
-		options.targetFileName = options.targetFileName.replace(/-/g, "_");
-
-		this.fs.copyTpl(
-			options.sourceFilePath,
-			this.destinationPath() + "/server/services/" + options.targetFileName,
-			this.context
-		);
-
-		let servicesInitFilePath = this.destinationPath("./server/services/" + SERVICES_INIT_FILE);
-		let indexFileContent = this.fs.read(servicesInitFilePath);
-
-		let module = options.targetFileName.replace(".py", "");
-		let importToAdd = "from . import " + module + "\n" + GENERATE_IMPORT_HERE;
-
-		if (this.context.bluemix.backendPlatform.toLowerCase() === 'django'){
-			let contentToAdd = "\n\tname, service = " + module + ".getService()\n" +
-				"\tservice_manager.set(name, service)\n" + GENERATE_HERE;
-
-			indexFileContent = indexFileContent.replace(GENERATE_HERE, contentToAdd);
-			indexFileContent = indexFileContent.replace(GENERATE_IMPORT_HERE, importToAdd);
-			this.fs.write(servicesInitFilePath, indexFileContent);
-		}else{
-			let contentToAdd = "\n\tname, service = " + module + ".getService(app)\n" +
-				"\tservice_manager.set(name, service)\n" + GENERATE_HERE;
-
-			indexFileContent = indexFileContent.replace(GENERATE_HERE, contentToAdd);
-			indexFileContent = indexFileContent.replace(GENERATE_IMPORT_HERE, importToAdd);
-			this.fs.write(servicesInitFilePath, indexFileContent);
+		function pascalize(name) {
+			return name.split('-').map(part => part.charAt(0).toUpperCase() + part.substring(1).toLowerCase()).join('');
 		}
 
+		if (this.context.injectIntoApplication) {
+			let extension = path.extname(options.targetFileName);
+			let targetName = pascalize(path.basename(options.targetFileName, extension));
+			options.targetFileName = options.targetFileName.replace(/-/g, "_");
+
+			// Copy source file
+			let targetFilePath = this.destinationPath('services', options.targetFileName);
+			this.fs.copyTpl(options.sourceFilePath, targetFilePath, this.context);
+			let metaFile = options.sourceFilePath.substring(0, options.sourceFilePath.lastIndexOf("/")) + '/meta.json';
+			let metaData = this.fs.readJSON(metaFile);
+			let metaImport = metaData.import
+
+			// We expect the source file to define a function as an entry point for initialization
+			// The function should be available in the module scope and have a name of the form:
+			// 'initializeMyService()'. For example, if the targetFileName is 'service-appid.swift'
+			// then the function will be 'initializeServiceAppid()'
+			// this.context.injectIntoApplication({ service: `try initialize${targetName}()` });
+
+			if (metaImport !== undefined) {
+				this.context.injectIntoApplication({ service_import: `${metaImport}` });
+			}
+			if (metaData.variableName !== undefined  && metaData.type !== undefined && targetName !== undefined) {
+				this.context.injectIntoApplication({ service_variable: `${metaData.variableName} *${metaData.type}` });
+				this.context.injectIntoApplication({ service: `${metaData.variableName}, err = Initialize${targetName}()` });
+			} else if (targetName !== undefined) {
+				this.context.injectIntoApplication({ service: `Initialize${targetName}()` });
+			}
 	}
 
 	_addReadMe(options){
@@ -179,7 +177,3 @@ module.exports = class extends Generator {
 	// 		.then(() => Utils.addServicesToPipelineYamlAsync({context: this.context, destinationPath: this.destinationPath()}));
 	// }
 };
-
-
-
-
