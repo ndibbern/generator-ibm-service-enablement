@@ -1,13 +1,9 @@
 'use strict';
 const Log4js = require('log4js');
 const logger = Log4js.getLogger("generator-service-enablement-golang:language-go");
-const toml = require('toml');
 const path = require('path');
 const Utils = require('../lib/Utils');
 const fs = require('fs');
-
-const GENERATE_HERE = "// GENERATE HERE";
-const GENERATE_IMPORT_HERE = "// GENERATE IMPORT HERE";
 
 let Generator = require('yeoman-generator');
 const scaffolderMapping = require('../resources/scaffolderMapping.json');
@@ -28,8 +24,12 @@ module.exports = class extends Generator {
 		logger.debug("Constructing");
 	}
 
-	configuring(){
-		this.context.dependenciesFile = "Gopkg.toml";
+	// configuring(){
+		
+	// }
+
+	initializing() {
+		this.context.dependenciesFile = "dependencies.toml";
 		this.context.languageFileExt = ".go";
 		this.context.generatorLocation = GENERATOR_LOCATION;
 		this.context.addDependencies = this._addDependencies.bind(this);
@@ -37,23 +37,11 @@ module.exports = class extends Generator {
 		this.context.addLocalDevConfig = this._addLocalDevConfig.bind(this);
 		this.context.addReadMe = this._addReadMe.bind(this);
 		this.context.addInstrumentation = this._addInstrumentation.bind(this);
-	}
 
-	writing() {
 		let serviceCredentials,
 			scaffolderKey,
 			serviceKey;
 		this._addDependencies(this.fs.read(this.templatePath() + "/" + this.context.dependenciesFile));
-
-		this.fs.copy(
-			this.templatePath() + "/service-manager.go",
-			this.destinationPath("./server/services/service-manager.go")
-		);
-
-		this.fs.copy(
-			this.templatePath() + "/services-index.go",
-			this.destinationPath("./server/services/index.go") // what is our services init file? not index.js
-		);
 
 		//initializing ourselves by composing with the service generators
 		let root = path.join(path.dirname(require.resolve('../app')), '../');
@@ -78,31 +66,8 @@ module.exports = class extends Generator {
 
 	// const PATH_GOPKG_TOML = "/Gopkg.toml"
 	// const PATH_GOPKG = "Gopkg.toml"
-
 	_addDependencies(serviceDepdendenciesString) {
-		let gopkgTomlPath = this.destinationPath(PATH_GOPKG);
-		let gopkgToml = this.fs.read(gopkgTomlPath);
-		let content = toml.parse(gopkgToml).constraint;
-
-		// will we ever append more than one constraint?
-		let newDepenedency = toml.parse(serviceDepdendenciesString).constraint;
-
-		console.log(newDepenedency)
-		//check if it exists
-
-		content.forEach(function(dependency) {
-			console.log(dependency.name + " and " + newDepenedency.name);
-			if (dependency.name === newDepenedency.name) {
-				console.log(dependency.name)
-				return;
-			}
-
-		});
-
-		// only append if the dependency does not already exist
-		this.fs.append(gopkgTomlPath, serviceDepdendenciesString);
-
-		// TODO: finish this once the IBM Cloud ENV is completed
+		this.context.injectDependency(serviceDepdendenciesString);
 	}
 
 	_addMappings(serviceMappingsJSON) {
@@ -131,22 +96,23 @@ module.exports = class extends Generator {
 			let metaFile = options.sourceFilePath.substring(0, options.sourceFilePath.lastIndexOf("/")) + '/meta.json';
 			let metaData = this.fs.readJSON(metaFile);
 			let metaImport = metaData.import
-
+		
 			// We expect the source file to define a function as an entry point for initialization
 			// The function should be available in the module scope and have a name of the form:
 			// 'initializeMyService()'. For example, if the targetFileName is 'service-appid.swift'
 			// then the function will be 'initializeServiceAppid()'
 			// this.context.injectIntoApplication({ service: `try initialize${targetName}()` });
 
-			if (metaImport !== undefined) {
+			if (typeof metaImport !== 'undefined') {
 				this.context.injectIntoApplication({ service_import: `${metaImport}` });
 			}
-			if (metaData.variableName !== undefined  && metaData.type !== undefined && targetName !== undefined) {
+			if (typeof metaData.variableName !== 'undefined' && typeof metaData.type !== 'undefined' && typeof targetName !== 'undefined') {
 				this.context.injectIntoApplication({ service_variable: `${metaData.variableName} *${metaData.type}` });
 				this.context.injectIntoApplication({ service: `${metaData.variableName}, err = Initialize${targetName}()` });
-			} else if (targetName !== undefined) {
+			} else if (typeof targetName !== 'undefined') {
 				this.context.injectIntoApplication({ service: `Initialize${targetName}()` });
 			}
+		}
 	}
 
 	_addReadMe(options){
@@ -156,24 +122,9 @@ module.exports = class extends Generator {
 		);
 	}
 
-	// // TODO: fix this
-	// end(){
-	// 	// Remove GENERATE_HERE from /server/services/index.js
-	// 	let servicesIndexJsFilePath = this.destinationPath("./server/services/index.js");
-	// 	let indexFileContent = this.fs.read(servicesIndexJsFilePath);
-	// 	indexFileContent = indexFileContent.replace(GENERATE_HERE, "");
-	// 	this.fs.write(servicesIndexJsFilePath, indexFileContent);
-
-	// 	// Add PATH_LOCALDEV_CONFIG_FILE to .gitignore
-	// 	let gitIgnorePath = this.destinationPath(PATH_GIT_IGNORE);
-	// 	if (this.fs.exists(gitIgnorePath)){
-	// 		this.fs.append(gitIgnorePath, PATH_LOCALDEV_CONFIG_FILE);
-	// 	} else {
-	// 		this.fs.write(gitIgnorePath, PATH_LOCALDEV_CONFIG_FILE);
-	// 	}
-
-	// 	// add services env to deployment.yaml && cf create-service to pipeline.yaml
-	// 	return Utils.addServicesEnvToHelmChartAsync({context: this.context, destinationPath: this.destinationPath()})
-	// 		.then(() => Utils.addServicesToPipelineYamlAsync({context: this.context, destinationPath: this.destinationPath()}));
-	// }
+	end(){
+	  	// add services env to deployment.yaml && cf create-service to pipeline.yaml
+		return Utils.addServicesEnvToHelmChartAsync({context: this.context, destinationPath: this.destinationPath()})
+			.then(() => Utils.addServicesToPipelineYamlAsync({context: this.context, destinationPath: this.destinationPath()}));
+	}
 };
