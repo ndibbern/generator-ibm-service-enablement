@@ -12,6 +12,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "npm run lint && nyc mocha test/app-*",
+    "testgo": "mocha test/app-golang-gin-test.js",
     "testjava": "mocha test/app-java-test.js",
     "testnode": "mocha test/app-node-express-test.js",
     "testpython": "mocha test/app-python-flask-test.js",
@@ -30,9 +31,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "handlebars": "^4.0.10",
+    "lodash": "^4.17.10",
     "log4js": "^1.1.1",
-    "yeoman-generator": "^1.1.1",
-    "lodash": "^4.17.4"
+    "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {
     "axios": "^0.16.2",
@@ -48,9 +49,9 @@
     "mem-fs-editor": "^3.0.2",
     "mocha": "^3.4.2",
     "nyc": "^11.0.2",
-    "request-promise": "^4.2.1",
+    "request-promise": "^4.2.2",
     "standard-version": "^4.4.0",
     "yeoman-assert": "^3.0.0",
-    "yeoman-test": "^1.7.0"
+    "yeoman-test": "^1.8.0"
   }
 }
