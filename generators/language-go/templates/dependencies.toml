@@ -1,5 +1,4 @@
 
-# [[constraint]]
-#  name = "github.com/IBMCloudEnv"
-#  version = "1.0.0"
-
+ [[constraint]]
+  name = "github.com/ibm-developer/ibm-cloud-env-golang"
+  version = "0.0.1"

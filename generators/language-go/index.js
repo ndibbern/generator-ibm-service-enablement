@@ -28,6 +28,7 @@ module.exports = class extends Generator {
 		this.context.service_imports = [];
 		this.context.service_variables = [];
 		this.context.services = [];
+		this.context.dependencies = [];
 		this.context.dependenciesFile = "dependencies.toml";
 		this.context.languageFileExt = ".go";
 		this.context.generatorLocation = GENERATOR_LOCATION;
@@ -35,10 +36,8 @@ module.exports = class extends Generator {
 		this.context.addMappings = this._addMappings.bind(this);
 		this.context.addLocalDevConfig = this._addLocalDevConfig.bind(this);
 		this.context.addReadMe = this._addReadMe.bind(this);
-		this.context.addInstrumentation = this._addInstrumentation.bind(this);	
-	}
+		this.context.addInstrumentation = this._addInstrumentation.bind(this);
 
-	writing() { 
 		let serviceCredentials,
 			scaffolderKey,
 			serviceKey;
@@ -62,38 +61,42 @@ module.exports = class extends Generator {
 					logger.warn('Unable to compose with service', folder, err);
 				}
 			}
-		});
-		console.log(this.context.addServiceGo);
-		console.log(this.context.service_imports);
+		});	
+	}
 
+	// initializing() {
+		
+	// }
+
+	writing() { 
+		// Generate services.go, which acts like a service manager
 		if (this.context.addServiceGo) {
 			this.fs.copyTpl(
 				this.templatePath() + "/services.go",
 				this.destinationPath("./services/services.go"),
 				this.context
 			);
-		}	
+		}
+
+		// Append dependencies to the Gopkg.toml
+		let goPkgPath = this.destinationPath(PATH_GOPKG_TOML);
+		// Write a Gopkg.toml if one doesn't exist
+	  	if (!this.fs.exists(goPkgPath)) {
+			this.fs.copy(this.templatePath() + "/" + PATH_GOPKG, this.destinationPath(PATH_GOPKG_TOML));
+		}
+		this.context.dependencies.forEach((dependency) => {
+	    	let fileContentString = this.fs.read(this.destinationPath(PATH_GOPKG));
+	     	// Append if not already found
+	     	if (fileContentString.indexOf(dependency) === -1) {
+	    		this.fs.append(this.destinationPath(PATH_GOPKG), dependency);
+	      	}
+	    });
 	}
 
 	// const PATH_GOPKG_TOML = "./Gopkg.toml"
 	// const PATH_GOPKG = "Gopkg.toml"
 	_addDependencies(serviceDepdendenciesString) {
-		let goPkgPath = this.destinationPath(PATH_GOPKG_TOML);
-	
-	  	if (this.fs.exists(goPkgPath)) {
-	  		// Read file and append if not already found
-	  		let fileContentString = this.fs.read(this.destinationPath(PATH_GOPKG));
-	  		if (fileContentString.indexOf(serviceDepdendenciesString) === -1) {
-        		this.fs.append(this.destinationPath(PATH_GOPKG), serviceDepdendenciesString);
-	  		}
-	  	} else {
-	  		// Write a Gopkg.toml if one doesn't exist
-	  		this.fs.copy(
-	  			this.templatePath() + "/Gopkg.toml",
-	  			this.destinationPath("./Gopkg.toml")
-	  		);
-	  		this.fs.append(this.destinationPath(PATH_GOPKG), serviceDepdendenciesString);
-	  	}
+		this.context.dependencies.push(serviceDepdendenciesString);
 	}
 
 	_addMappings(serviceMappingsJSON) {
@@ -107,11 +110,14 @@ module.exports = class extends Generator {
 	}
 
 	_addInstrumentation(options) {
-		console.log("HERE IN")
 		function pascalize(name) {
 			return name.split('-').map(part => part.charAt(0).toUpperCase() + part.substring(1).toLowerCase()).join('');
 		}
 
+		if (this.context.useServices) {
+			this.context.useServices();
+		}
+		
 		this.context.addServiceGo = true;
 		let extension = path.extname(options.targetFileName);
 		let targetName = pascalize(path.basename(options.targetFileName, extension));
@@ -133,7 +139,6 @@ module.exports = class extends Generator {
 		if (typeof metaImport !== 'undefined') {
 			this.context.service_imports.push(`${metaImport}`);
 		}
-		console.log("HERE IN")
 		if (typeof metaData.variableName !== 'undefined' && typeof metaData.type !== 'undefined' && typeof targetName !== 'undefined') {
 			this.context.service_variables.push(`${metaData.variableName} *${metaData.type}`);
 			this.context.services.push(`${metaData.variableName}, err = Initialize${targetName}()`);
