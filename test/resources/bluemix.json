@@ -78,7 +78,7 @@
       "plan": "ibm.SparkService.PayGoPersonal"
     }
   },
-  "auth": {
+  "appid": {
     "clientId": "auth-client-id",
     "oauthServerUrl": "https://appid-oauth.ng.bluemix.net/oauth/v3/auth-client-id",
     "profilesUrl": "https://appid-profiles.ng.bluemix.net",
@@ -138,6 +138,20 @@
       }
     }
   ],
+  "cloudobjectstorage": {
+    "apikey": "apikey",
+    "endpoints": "endpoints",
+    "iam_apikey_description": "iam_apikey_description",
+    "iam_apikey_name": "iam_apikey_name",
+    "iam_role_crn": "iam_role_crn",
+    "iam_serviceid_crn": "iam_serviceid_crn",
+    "resource_instance_id": "resource_instance_id",
+        "serviceInfo": {
+        "name": "cloud-object-storage",
+        "label": "cloud-object-storage-label",
+        "plan": "cloud-object-storage-plan"
+      }
+  },
   "conversation": {
     "url": "https://gateway.watsonplatform.net/conversation/api",
     "username": "conversation-username",

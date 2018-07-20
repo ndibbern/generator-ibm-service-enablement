@@ -49,11 +49,11 @@ describe('node-express', function () {
 
 	it('Can add AppID/Auth instrumentation', () => {
 		testAll('appid', {
-			appid_tenantId: optionsBluemix.auth.tenantId,
-			appid_clientId: optionsBluemix.auth.clientId,
-			appid_secret: optionsBluemix.auth.secret,
-			appid_oauthServerUrl: optionsBluemix.auth.oauthServerUrl,
-			appid_profilesUrl: optionsBluemix.auth.profilesUrl
+			appid_tenantId: optionsBluemix.appid.tenantId,
+			appid_clientId: optionsBluemix.appid.clientId,
+			appid_secret: optionsBluemix.appid.secret,
+			appid_oauthServerUrl: optionsBluemix.appid.oauthServerUrl,
+			appid_profilesUrl: optionsBluemix.appid.profilesUrl
 		});
 	});
 
@@ -64,6 +64,18 @@ describe('node-express', function () {
 			cloudant_url: optionsBluemix.cloudant[0].url
 		});
 	});
+
+	it('Can add Cloud Object Storage instrumentation', () => {
+		testAll('cloud-object-storage', {
+			cloud_object_storage_apikey: optionsBluemix.cloudobjectstorage.apikey,
+			cloud_object_storage_endpoints: optionsBluemix.cloudobjectstorage.endpoints,
+			cloud_object_storage_iam_apikey_description: optionsBluemix.cloudobjectstorage.iam_apikey_description,
+			cloud_object_storage_iam_apikey_name: optionsBluemix.cloudobjectstorage.iam_apikey_name,
+			cloud_object_storage_iam_role_crn: optionsBluemix.cloudobjectstorage.iam_role_crn,
+			cloud_object_storage_iam_serviceid_crn: optionsBluemix.cloudobjectstorage.iam_serviceid_crn,
+			cloud_object_storage_resource_instance_id: optionsBluemix.cloudobjectstorage.resource_instance_id
+		})
+	})
 
 	it('Can add ObjectStorage instrumentation', () => {
 		testAll('object-storage', {
